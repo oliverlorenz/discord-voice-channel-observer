@@ -4,6 +4,10 @@ import { EventEmitter } from 'events';
 const EVENT_INCREASE = 'increase';
 const EVENT_DECREASE = 'decrease';
 
+export interface Counts {
+    before: number;
+    after: number;
+}
 
 export class VoiceChannelObserver {
     private currentPresentUsers: string[];
@@ -57,7 +61,7 @@ export class VoiceChannelObserver {
     }
 
     public onEmpty(callback: (channelId: string) => void) {
-        this.emitter.on(EVENT_DECREASE, (counts) => {
+        this.emitter.on(EVENT_DECREASE, (counts: Counts) => {
             if (counts.after === 0) callback(this.channelId);
         });
     }
@@ -68,7 +72,7 @@ export class VoiceChannelObserver {
     }
 
     public onNotEmpty(callback: (channelId: string) => void) {
-        this.emitter.on(EVENT_INCREASE, (counts) => {
+        this.emitter.on(EVENT_INCREASE, (counts: Counts) => {
             if (counts.before === 0) callback(this.channelId);
         });
     }
