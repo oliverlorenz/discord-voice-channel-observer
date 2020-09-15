@@ -3,14 +3,13 @@
     "target": "es6",
     "module": "commonjs",
     "skipLibCheck": true,
+    "outDir": "./dist",
     "moduleResolution": "node",
     "strict": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "noUnusedLocals": true,
     "pretty": true,
-    "lib": [
-      "esnext"
-    ]
+    "lib": ["esnext"]
   }
 }

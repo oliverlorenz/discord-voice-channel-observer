@@ -2,10 +2,10 @@
   "name": "discord-voice-channel-observer",
   "version": "1.0.2",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "pretest": "tsc --noEmit",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "pretest": "tsc",
+    "test": "jest",
     "postinstall": "npx tsc"
   },
   "author": "",
@@ -14,7 +14,13 @@
     "discord.js": "^12.2.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.11.6",
+    "@babel/preset-env": "^7.11.5",
+    "@babel/preset-typescript": "^7.10.4",
+    "@types/jest": "^26.0.13",
     "@types/node": "^13.13.4",
+    "babel-jest": "^26.3.0",
+    "jest": "^26.4.2",
     "typescript": "^3.8.3"
   }
 }
