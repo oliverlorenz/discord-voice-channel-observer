@@ -1,5 +1,5 @@
 {
-  "name": "discord-voice-channel-observer",
+  "name": "@gluecode-it/discord-voice-channel-observer",
   "version": "2.0.1",
   "description": "",
   "main": "dist/index.js",
