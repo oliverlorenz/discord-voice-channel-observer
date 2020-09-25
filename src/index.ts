@@ -1,10 +1,10 @@
-import { Client, VoiceState } from "discord.js";
-import { EventEmitter } from "events";
+import { Client, VoiceState } from 'discord.js';
+import { EventEmitter } from 'events';
 
 export enum Event {
-	INCREASE = "increase",
-	DECREASE = "decrease",
-	NO_CHANGE = "no_change",
+	INCREASE = 'increase',
+	DECREASE = 'decrease',
+	NO_CHANGE = 'no_change',
 }
 
 export interface Counts {
@@ -22,7 +22,7 @@ export class VoiceChannelObserver {
 	) {
 		this.emitter = new EventEmitter();
 		this.client.on(
-			"voiceStateUpdate",
+			'voiceStateUpdate',
 			(oldMember: VoiceState, newMember: VoiceState) => {
 				if (this.hasUserJoined(oldMember, newMember)) {
 					const countBefore = this.currentPresentUsers.length;
