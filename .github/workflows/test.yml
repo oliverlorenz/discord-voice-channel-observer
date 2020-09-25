@@ -1,21 +1,33 @@
-name: Pull detached upstream automatically from https://github.com/gluecode-it/base-typescript.git
-
+name: Manual Merge Remote Action
 on:
-  # Possibility to run it manually
   workflow_dispatch:
+    inputs:
+      upstream-branch:
+        description: 'Upstream repository owner/name. Eg. exions/merge-upstream'
+        required: true
+        default: 'master' # set the upstream repo
+      upstream:
+        description: 'Upstream repository owner/name. Eg. exions/merge-upstream'
+        required: true
+        default: 'gluecode-it/base-typescript' # set the upstream repo
+      branch:
+        description: 'Branch to merge to'
+        required: true
+        default: 'upstream' # set the branch to merge to
+
 jobs:
-  # set up another job to merge another branch
-  merge-upstream-another-branch:
+  merge-upstream:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          ref: test # set the branch to merge to
+          ref: ${{ github.event.inputs.branch }}
           fetch-depth: 0
       - name: Merge Upstream
         uses: exions/merge-upstream@v1
         with:
-          upstream: gluecode-it/base-typescript # set the upstream repo
-          upstream-branch: master # set the upstream branch to merge from
-          branch: test # set the branch to merge to
+          upstream: ${{ github.event.inputs.upstream }}
+          upstream-branch: ${{ github.event.inputs.upstream-branch }}
+          branch: ${{ github.event.inputs.branch }}
+          token: ${{ secrets.TOKEN }}
