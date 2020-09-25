@@ -1,20 +1,24 @@
-name: Pull upstream
+name: Pull detached upstream automatically from https://github.com/gluecode-it/base-typescript.git
+
 on:
+  # Possibility to run it manually
   workflow_dispatch:
 jobs:
-  release_pull_request:
+  build:
     runs-on: ubuntu-latest
-    name: release_pull_request
+
     steps:
-    - name: checkout
-      uses: actions/checkout@v1
-    - name: Create PR to branch
-      uses: gorillio/github-action-sync@master
-      with:
-        upstream: git@github.com:gluecode-it/base-typescript.git
-        upstream_branch: master
-        branch: master
-        pr_labels: upstream
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        DRY_RUN: false
+      # Checkout the current repo
+      - uses: actions/checkout@v2
+      # Fetch the history and unshallow the repo so that it can be used
+      - name: Fetch all history for all tags and branches
+        run: git fetch --prune --unshallow
+      # Pull the detached remote and do the magic
+      - name: Pull Detached Remote
+        uses: litetex/pull-detached-remote@v0.2.0
+        with:
+          upstreamrepo: https://github.com/gluecode-it/base-typescript.git
+          upstreambranch: master
+        env:
+          GITHUB_PAT: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
