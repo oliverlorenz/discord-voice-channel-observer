@@ -100,6 +100,7 @@ export class VoiceChannelObserver {
 
   public onNotEmpty(callback: (counts: Counts) => void) {
     this.emitter.on(Event.INCREASE, (counts: Counts) => {
+      console.log(counts);
       if (counts.before === 0 && counts.now > 0) callback(counts);
     });
   }

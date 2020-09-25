@@ -4,9 +4,9 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "pretest": "tsc",
-    "test": "jest",
-    "postinstall": "npx tsc"
+    "test": "jest --coverage",
+    "dev:test": "jest --coverage --coverage-reporters html --watch-all",
+    "prepare": "tsc"
   },
   "author": "",
   "license": "ISC",
