@@ -1,0 +1,20 @@
+name: Pull upstream
+on:
+  workflow_dispatch:
+jobs:
+  release_pull_request:
+    runs-on: ubuntu-latest
+    name: release_pull_request
+    steps:
+    - name: checkout
+      uses: actions/checkout@v1
+    - name: Create PR to branch
+      uses: gorillio/github-action-sync@master
+      with:
+        upstream: git@github.com:gluecode-it/base-typescript.git
+        upstream_branch: master
+        branch: master
+        pr_labels: upstream
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        DRY_RUN: false
