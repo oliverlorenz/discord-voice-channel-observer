@@ -5,6 +5,7 @@
     "skipLibCheck": true,
     "outDir": "./dist",
     "moduleResolution": "node",
+    "declaration": true,
     "strict": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
