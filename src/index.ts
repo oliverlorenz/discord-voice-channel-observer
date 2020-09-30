@@ -109,8 +109,21 @@ export class VoiceChannelObserver {
 		callback: (channelId: string, counts: Counts) => void
 	) {
 		this.emitter.on(Event.INCREASE, (counts: Counts) => {
-			if (counts.now >= threshold) callback(this.channelId, counts);
+			if (counts.now >= threshold) return callback(this.channelId, counts);
 		});
+	}
+
+	public onceThresholdReached(
+		threshold: number,
+		callback: (channelId: string, counts: Counts) => void
+	) {
+		const handler = (counts: Counts) => {
+			if (counts.now >= threshold) {
+				callback(this.channelId, counts);
+				this.emitter.removeListener(Event.INCREASE, handler);
+			}
+		};
+		this.emitter.on(Event.INCREASE, handler);
 	}
 
 	public onThresholdLeft(
@@ -120,5 +133,18 @@ export class VoiceChannelObserver {
 		this.emitter.on(Event.DECREASE, (counts: Counts) => {
 			if (counts.now < threshold) callback(this.channelId, counts);
 		});
+	}
+
+	public onceThresholdLeft(
+		threshold: number,
+		callback: (channelId: string, counts: Counts) => void
+	) {
+		const handler = (counts: Counts) => {
+			if (counts.now < threshold) {
+				callback(this.channelId, counts);
+				this.emitter.removeListener(Event.DECREASE, handler);
+			}
+		};
+		this.emitter.on(Event.DECREASE, handler);
 	}
 }
