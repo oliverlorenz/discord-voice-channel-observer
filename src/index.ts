@@ -1,5 +1,6 @@
 import { Client, VoiceState } from 'discord.js';
 import { EventEmitter } from 'events';
+import { count } from 'console';
 
 export enum Event {
 	INCREASE = 'increase',
@@ -14,34 +15,54 @@ export interface Counts {
 
 export class VoiceChannelObserver {
 	private emitter: EventEmitter;
+	private currentPresentUsers: string[];
 
-	constructor(
-		private client: Client,
-		private channelId: string,
-		private currentPresentUsers: string[] = []
-	) {
+	constructor(private client: Client, private channelId: string) {
 		this.emitter = new EventEmitter();
+		this.currentPresentUsers = [];
+	}
+
+	private addUser(userId: string) {
+		if (!this.currentPresentUsers.includes(userId)) {
+			this.currentPresentUsers.push(userId);
+		}
+	}
+
+	public getCurrentPresentUsersCount(): number {
+		return this.currentPresentUsers.length;
+	}
+
+	async start() {
+		const channel = await this.client.channels.fetch(this.channelId);
+		// @ts-ignore
+		for (const [id] of channel.members) {
+			this.addUser(id);
+		}
+
 		this.client.on(
 			'voiceStateUpdate',
 			(oldMember: VoiceState, newMember: VoiceState) => {
 				if (this.hasUserJoined(oldMember, newMember)) {
 					const countBefore = this.currentPresentUsers.length;
-					this.currentPresentUsers.push(newMember.id);
+					this.addUser(newMember.id);
 					const countAfter = this.currentPresentUsers.length;
-					this.emitIncrease(countBefore, countAfter);
-					return;
+					if (countBefore !== countAfter) {
+						return this.emitIncrease(countBefore, countAfter);
+					}
 				}
 
 				if (this.hasUserLeft(oldMember, newMember)) {
 					const countBefore = this.currentPresentUsers.length;
+					console.log(this.currentPresentUsers);
 					this.currentPresentUsers = this.currentPresentUsers.filter(
 						(userIdInList) => {
 							return userIdInList !== newMember.id;
 						}
 					);
 					const countAfter = this.currentPresentUsers.length;
-					this.emitDecrease(countBefore, countAfter);
-					return;
+					if (countBefore !== countAfter) {
+						return this.emitDecrease(countBefore, countAfter);
+					}
 				}
 
 				this.emitNothingChanged(this.currentPresentUsers.length);
@@ -77,6 +98,7 @@ export class VoiceChannelObserver {
 
 	public onEmpty(callback: (counts: Counts) => void) {
 		this.onDecreased((counts: Counts) => {
+			console.log(counts);
 			if (counts.now === 0 && counts.before > 0) callback(counts);
 		});
 	}

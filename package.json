@@ -12,7 +12,7 @@
 	},
 	"author": "",
 	"license": "ISC",
-	"dependencies": {
+	"peerDependencies": {
 		"discord.js": "^12.3.1"
 	},
 	"devDependencies": {
@@ -45,5 +45,8 @@
 			"prettier --write",
 			"eslint --fix"
 		]
+	},
+	"dependencies": {
+		"discord.js": "^12.3.1"
 	}
 }

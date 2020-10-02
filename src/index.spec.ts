@@ -1,23 +1,28 @@
 import { VoiceChannelObserver, Counts } from '.';
 import { EventEmitter } from 'events';
-import { Client, VoiceState } from 'discord.js';
+import { Client, VoiceState, Collection } from 'discord.js';
 
 describe('VoiceChannelObserver', () => {
 	const fakeChannelId = 'myChannelId';
-	function buildObserver(existingUsers?: string[]) {
+	function buildObserver(alreadyPresentUserIds: string[] = []) {
 		const emitter = new EventEmitter();
-		const observer = new VoiceChannelObserver(
-			emitter as Client,
-			fakeChannelId,
-			existingUsers
-		);
+		emitter.channels = {
+			fetch: async () => {
+				const members = new Collection<string, {}>();
+				alreadyPresentUserIds.forEach((userId) => {
+					members.set(userId, {});
+				});
+				return {
+					members,
+				};
+			},
+		};
+		const observer = new VoiceChannelObserver(emitter as Client, fakeChannelId);
 		return {
 			observer,
 			emitter,
 		};
 	}
-
-	beforeEach(() => {});
 
 	describe('to be defined', () => {
 		it('with no users', () => {
@@ -29,15 +34,54 @@ describe('VoiceChannelObserver', () => {
 			const { observer } = buildObserver(['fakeUser']);
 			expect(observer).toBeDefined();
 		});
+		describe('users should be unique', () => {
+			it('add', async () => {
+				const { observer, emitter } = buildObserver(['fakeUser']);
+				await observer.start();
+				emitter.emit(
+					'voiceStateUpdate',
+					{
+						id: 'fakeUser',
+						channelID: 'FROM_CHANNEL_ID',
+					} as VoiceState,
+					{
+						id: 'fakeUser',
+						channelID: fakeChannelId,
+					} as VoiceState
+				);
+				setTimeout(() => {
+					expect(observer.getCurrentPresentUsersCount()).toEqual(1);
+				}, 10);
+			});
+			it('remove', async () => {
+				const { observer, emitter } = buildObserver([]);
+				await observer.start();
+				emitter.emit(
+					'voiceStateUpdate',
+					{
+						id: 'fakeUser',
+						channelID: fakeChannelId,
+					} as VoiceState,
+					{
+						id: 'fakeUser',
+						channelID: 'IRELEVANT_CHANNEL_ID',
+					} as VoiceState
+				);
+				setTimeout(() => {
+					expect(observer.getCurrentPresentUsersCount()).toEqual(1);
+				}, 10);
+			});
+		});
 	});
 
 	describe('onIncreased', () => {
-		it('changes parameters after join to channel', (done) => {
+		it('changes parameters after join to channel', async (done) => {
 			const { observer, emitter } = buildObserver();
 			observer.onIncreased((counts: Counts) => {
 				expect(counts).toEqual({ now: 1, before: 0 });
 				done();
 			});
+			await observer.start();
 			emitter.emit(
 				'voiceStateUpdate',
 				{
@@ -53,13 +97,14 @@ describe('VoiceChannelObserver', () => {
 	});
 
 	describe('onDecreased', () => {
-		it('changes parameters after leave to channel', (done) => {
+		it('changes parameters after leave to channel', async (done) => {
 			const { observer, emitter } = buildObserver(['fakeUser']);
 
 			observer.onDecreased((changeObject) => {
 				expect(changeObject).toEqual({ now: 0, before: 1 });
 				done();
 			});
+			await observer.start();
 			emitter.emit(
 				'voiceStateUpdate',
 				{
@@ -74,12 +119,13 @@ describe('VoiceChannelObserver', () => {
 	});
 
 	describe('onEmpty', () => {
-		it('called if count drops to empty', (done) => {
+		it('called if count drops to empty', async (done) => {
 			const { observer, emitter } = buildObserver(['fakeUser']);
 
 			observer.onEmpty((changeObject) => {
 				done();
 			});
+			await observer.start();
 			emitter.emit(
 				'voiceStateUpdate',
 				{
@@ -93,10 +139,15 @@ describe('VoiceChannelObserver', () => {
 			);
 		});
 
-		it("not called count doesn't match", (done) => {
+		it("not called count doesn't match", async (done) => {
 			const { observer, emitter } = buildObserver(['fakeUser', 'fakeUser2']);
 			const callback = jest.fn();
 			observer.onEmpty(callback);
+			observer.onDecreased(() => {
+				expect(callback).toBeCalledTimes(0);
+				done();
+			});
+			await observer.start();
 			emitter.emit(
 				'voiceStateUpdate',
 				{
@@ -108,20 +159,18 @@ describe('VoiceChannelObserver', () => {
 					channelID: 'TO_CHANNEL_ID',
 				}
 			);
-			setTimeout(() => {
-				expect(callback).not.toBeCalled();
-				done();
-			}, 1);
 		});
 	});
 
 	describe('onNotEmpty', () => {
-		it('called if count drops to empty', (done) => {
+		it('called if count drops to empty', async (done) => {
 			const { observer, emitter } = buildObserver();
 
 			observer.onNotEmpty((changeObject) => {
 				done();
 			});
+
+			await observer.start();
 			emitter.emit(
 				'voiceStateUpdate',
 				{
@@ -135,10 +184,16 @@ describe('VoiceChannelObserver', () => {
 			);
 		});
 
-		it("not called count doesn't match", (done) => {
+		it("not called count doesn't match", async (done) => {
 			const { observer, emitter } = buildObserver(['otherFakeUser']);
 			const callback = jest.fn();
 			observer.onNotEmpty(callback);
+
+			await observer.start();
+			observer.onIncreased(() => {
+				expect(callback).not.toBeCalled();
+				done();
+			});
 			emitter.emit(
 				'voiceStateUpdate',
 				{
@@ -150,20 +205,18 @@ describe('VoiceChannelObserver', () => {
 					channelID: fakeChannelId,
 				}
 			);
-			setTimeout(() => {
-				expect(callback).not.toBeCalled();
-				done();
-			}, 1);
 		});
 	});
 
 	describe('onChange', () => {
-		it('called if count increase', (done) => {
+		it('called if count increase', async (done) => {
 			const { observer, emitter } = buildObserver();
 
 			observer.onChange((changeObject) => {
 				done();
 			});
+
+			await observer.start();
 			emitter.emit(
 				'voiceStateUpdate',
 				{
@@ -176,9 +229,10 @@ describe('VoiceChannelObserver', () => {
 				}
 			);
 		});
-		it('called if count decrease', (done) => {
+		it('called if count decrease', async (done) => {
 			const { observer, emitter } = buildObserver(['fakeUser']);
 
+			await observer.start();
 			observer.onChange((changeObject) => {
 				done();
 			});
@@ -197,11 +251,13 @@ describe('VoiceChannelObserver', () => {
 	});
 
 	describe('onThresholdReached', () => {
-		it('callback if threshold is reached', (done) => {
+		it('callback if threshold is reached', async (done) => {
 			const { observer, emitter } = buildObserver(['anotherFakeUser']);
 			observer.onThresholdReached(2, (changeObject) => {
 				done();
 			});
+
+			await observer.start();
 			emitter.emit(
 				'voiceStateUpdate',
 				{
@@ -215,7 +271,7 @@ describe('VoiceChannelObserver', () => {
 			);
 		});
 
-		it("not called count doesn't match", (done) => {
+		it("not called count doesn't match", async (done) => {
 			const { observer, emitter } = buildObserver();
 			const callback = jest.fn();
 			observer.onThresholdReached(2, callback);
@@ -230,6 +286,8 @@ describe('VoiceChannelObserver', () => {
 					channelID: fakeChannelId,
 				}
 			);
+
+			await observer.start();
 			setTimeout(() => {
 				expect(callback).not.toBeCalled();
 				done();
@@ -238,11 +296,13 @@ describe('VoiceChannelObserver', () => {
 	});
 
 	describe('onceThresholdReached', () => {
-		it('callback if threshold is reached', (done) => {
+		it('callback if threshold is reached', async (done) => {
 			const { observer, emitter } = buildObserver(['anotherFakeUser']);
 			observer.onceThresholdReached(2, (changeObject) => {
 				done();
 			});
+
+			await observer.start();
 			emitter.emit(
 				'voiceStateUpdate',
 				{
@@ -256,10 +316,12 @@ describe('VoiceChannelObserver', () => {
 			);
 		});
 
-		it('should only callback once', () => {
+		it('should only callback once', async () => {
 			const { observer, emitter } = buildObserver();
 			const callback = jest.fn();
 			observer.onceThresholdReached(2, callback);
+
+			await observer.start();
 			emitter.emit(
 				'voiceStateUpdate',
 				{
@@ -278,7 +340,7 @@ describe('VoiceChannelObserver', () => {
 					channelID: 'FROM_CHANNEL_ID',
 				},
 				{
-					id: 'fakeUser',
+					id: 'fakeUser2',
 					channelID: fakeChannelId,
 				}
 			);
@@ -289,17 +351,18 @@ describe('VoiceChannelObserver', () => {
 					channelID: 'FROM_CHANNEL_ID',
 				},
 				{
-					id: 'fakeUser',
+					id: 'fakeUser3',
 					channelID: fakeChannelId,
 				}
 			);
 			expect(callback).toHaveBeenCalledTimes(1);
 		});
 
-		it("not called count doesn't match", (done) => {
+		it("not called count doesn't match", async (done) => {
 			const { observer, emitter } = buildObserver();
 			const callback = jest.fn();
 			observer.onThresholdReached(2, callback);
+			await observer.start();
 			emitter.emit(
 				'voiceStateUpdate',
 				{
@@ -319,7 +382,7 @@ describe('VoiceChannelObserver', () => {
 	});
 
 	describe('onThresholdLeft', () => {
-		it('callback if threshold is left', (done) => {
+		it('callback if threshold is left', async (done) => {
 			const { observer, emitter } = buildObserver([
 				'fakeUser',
 				'anotherFakeUser',
@@ -327,6 +390,7 @@ describe('VoiceChannelObserver', () => {
 			observer.onThresholdLeft(2, (changeObject) => {
 				done();
 			});
+			await observer.start();
 			emitter.emit(
 				'voiceStateUpdate',
 				{
@@ -340,10 +404,15 @@ describe('VoiceChannelObserver', () => {
 			);
 		});
 
-		it("not called count doesn't match", (done) => {
-			const { observer, emitter } = buildObserver();
+		it("not called count doesn't match", async (done) => {
+			const { observer, emitter } = buildObserver(['fakeUser', 'fakeUser2']);
 			const callback = jest.fn();
 			observer.onThresholdLeft(0, callback);
+			await observer.start();
+			setTimeout(() => {
+				expect(callback).not.toBeCalled();
+				done();
+			}, 1);
 			emitter.emit(
 				'voiceStateUpdate',
 				{
@@ -355,13 +424,9 @@ describe('VoiceChannelObserver', () => {
 					channelID: 'OTHER_CHANNEL',
 				}
 			);
-			setTimeout(() => {
-				expect(callback).not.toBeCalled();
-				done();
-			}, 1);
 		});
 
-		it('should only callback once', () => {
+		it('should only callback once', async () => {
 			const { observer, emitter } = buildObserver([
 				'fakeUser',
 				'fakeUser2',
@@ -369,6 +434,7 @@ describe('VoiceChannelObserver', () => {
 			]);
 			const callback = jest.fn();
 			observer.onceThresholdLeft(2, callback);
+			await observer.start();
 			emitter.emit(
 				'voiceStateUpdate',
 				{
@@ -407,8 +473,9 @@ describe('VoiceChannelObserver', () => {
 	});
 
 	describe('onNothingChanged', () => {
-		it('callback if nothing changed', (done) => {
+		it('callback if nothing changed', async (done) => {
 			const { observer, emitter } = buildObserver(['fakeUser']);
+			await observer.start();
 			observer.onNothingChanged(() => {
 				done();
 			});
