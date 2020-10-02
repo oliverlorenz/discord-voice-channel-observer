@@ -1,6 +1,5 @@
 import { Client, VoiceState } from 'discord.js';
 import { EventEmitter } from 'events';
-import { count } from 'console';
 
 export enum Event {
 	INCREASE = 'increase',

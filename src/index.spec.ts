@@ -5,18 +5,19 @@ import { Client, VoiceState, Collection } from 'discord.js';
 describe('VoiceChannelObserver', () => {
 	const fakeChannelId = 'myChannelId';
 	function buildObserver(alreadyPresentUserIds: string[] = []) {
-		const emitter = new EventEmitter();
-		emitter.channels = {
-			fetch: async () => {
-				const members = new Collection<string, {}>();
-				alreadyPresentUserIds.forEach((userId) => {
-					members.set(userId, {});
-				});
-				return {
-					members,
-				};
+		const emitter = (Object.assign(new EventEmitter(), {
+			channels: {
+				fetch: async () => {
+					const members = new Collection<string, {}>();
+					alreadyPresentUserIds.forEach((userId) => {
+						members.set(userId, {});
+					});
+					return {
+						members,
+					};
+				},
 			},
-		};
+		}) as unknown) as EventEmitter;
 		const observer = new VoiceChannelObserver(emitter as Client, fakeChannelId);
 		return {
 			observer,
