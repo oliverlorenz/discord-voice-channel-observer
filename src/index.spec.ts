@@ -36,7 +36,7 @@ describe('VoiceChannelObserver', () => {
 			expect(observer).toBeDefined();
 		});
 		describe('users should be unique', () => {
-			it('add', async () => {
+			it('add', async (done) => {
 				const { observer, emitter } = buildObserver(['fakeUser']);
 				await observer.start();
 				emitter.emit(
@@ -52,9 +52,10 @@ describe('VoiceChannelObserver', () => {
 				);
 				setTimeout(() => {
 					expect(observer.getCurrentPresentUsersCount()).toEqual(1);
+					done();
 				}, 10);
 			});
-			it('remove', async () => {
+			it('remove', async (done) => {
 				const { observer, emitter } = buildObserver([]);
 				await observer.start();
 				emitter.emit(
@@ -69,7 +70,8 @@ describe('VoiceChannelObserver', () => {
 					} as VoiceState
 				);
 				setTimeout(() => {
-					expect(observer.getCurrentPresentUsersCount()).toEqual(1);
+					expect(observer.getCurrentPresentUsersCount()).toEqual(0);
+					done();
 				}, 10);
 			});
 		});
@@ -276,6 +278,11 @@ describe('VoiceChannelObserver', () => {
 			const { observer, emitter } = buildObserver();
 			const callback = jest.fn();
 			observer.onThresholdReached(2, callback);
+			await observer.start();
+			observer.onIncreased(() => {
+				expect(callback).toBeCalledTimes(0);
+				done();
+			});
 			emitter.emit(
 				'voiceStateUpdate',
 				{
@@ -287,12 +294,6 @@ describe('VoiceChannelObserver', () => {
 					channelID: fakeChannelId,
 				}
 			);
-
-			await observer.start();
-			setTimeout(() => {
-				expect(callback).not.toBeCalled();
-				done();
-			}, 1);
 		});
 	});
 

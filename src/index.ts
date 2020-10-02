@@ -96,7 +96,6 @@ export class VoiceChannelObserver {
 
 	public onEmpty(callback: (counts: Counts) => void) {
 		this.onDecreased((counts: Counts) => {
-			console.log(counts);
 			if (counts.now === 0 && counts.before > 0) callback(counts);
 		});
 	}
