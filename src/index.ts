@@ -52,7 +52,6 @@ export class VoiceChannelObserver {
 
 				if (this.hasUserLeft(oldMember, newMember)) {
 					const countBefore = this.currentPresentUsers.length;
-					console.log(this.currentPresentUsers);
 					this.currentPresentUsers = this.currentPresentUsers.filter(
 						(userIdInList) => {
 							return userIdInList !== newMember.id;
