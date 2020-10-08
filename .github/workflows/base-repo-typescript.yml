@@ -52,7 +52,7 @@ jobs:
           ref: ${{ github.event.inputs.branch }}
           fetch-depth: 0
       - name: Merge Upstream
-        uses: exions/merge-upstream@v1
+        uses: gluecode-it/.merge-upstream@master
         with:
           upstream: ${{ github.event.inputs.upstream }}
           upstream-branch: ${{ github.event.inputs.upstream-branch }}
