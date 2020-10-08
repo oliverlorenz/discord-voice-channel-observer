@@ -1,20 +1,40 @@
-name: Pull upstream
+name: Manual Merge Remote Action
 on:
   workflow_dispatch:
+
 jobs:
-  release_pull_request:
+  merge-upstream:
     runs-on: ubuntu-latest
-    name: release_pull_request
     steps:
-      - name: checkout
-        uses: actions/checkout@v1
-      - name: Create PR to branch
-        uses: gorillio/github-action-sync@master
+      - name: Checkout
+        uses: actions/checkout@v2
         with:
-          upstream: git@github.com:gluecode-it/.typescript-repo.git
-          upstream_branch: master
-          branch: upstream-typescript
-          pr_labels: upstream
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DRY_RUN: false
+          ref: ${{ github.event.inputs.branch }}
+          fetch-depth: 0
+      - name: Merge Upstream
+        uses: exions/merge-upstream@v1
+        with:
+          upstream: gluecode-it/.typescript-repo
+          upstream-branch: master
+          branch: upstream-branch
+          token: ${{ secrets.GH_PAT }}
+# name: Pull upstream
+# on:
+#   workflow_dispatch:
+# jobs:
+#   release_pull_request:
+#     runs-on: ubuntu-latest
+#     name: release_pull_request
+#     steps:
+#       - name: checkout
+#         uses: actions/checkout@v1
+#       - name: Create PR to branch
+#         uses: gorillio/github-action-sync@master
+#         with:
+#           upstream: git@github.com:gluecode-it/.typescript-repo.git
+#           upstream_branch: master
+#           branch: upstream-typescript
+#           pr_labels: upstream
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#           DRY_RUN: false
