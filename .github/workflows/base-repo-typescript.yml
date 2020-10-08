@@ -18,6 +18,12 @@ jobs:
           upstream-branch: master
           branch: upstream-branch
           token: ${{ secrets.GH_PAT }}
+      - name: Create Sync PR
+        uses: sudoStatus200/create-sync-pr@0.3.1
+        with:
+          GITHUB_TOKEN: ${{secrets.GH_PAT}}
+          SOURCE_BRANCH: 'upstream-branch'
+          TARGET_BRANCH: 'master'
 # name: Pull upstream
 # on:
 #   workflow_dispatch:
