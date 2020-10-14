@@ -51,13 +51,24 @@ jobs:
         with:
           ref: ${{ github.event.inputs.branch }}
           fetch-depth: 0
-      - name: Merge Upstream
-        uses: gluecode-it/.merge-upstream@master
+      - name: Fetch all history for all tags and branches
+        run: git fetch --prune --unshallow
+      # Pull the detached remote and do the magic
+      - name: Pull Detached Remote
+        uses: litetex/pull-detached-remote@v0.2.0
         with:
-          upstream: ${{ github.event.inputs.upstream }}
-          upstream-branch: ${{ github.event.inputs.upstream-branch }}
-          branch: ${{ github.event.inputs.branch }}
-          token: ${{ secrets.TOKEN }}
+          upstreamrepo: https://github.com/gluecode-it/.typescript-repo
+          upstreambranch: master
+        env:
+          GITHUB_PAT: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Merge Upstream
+      #   uses: gluecode-it/.merge-upstream@master
+      #   with:
+      #     upstream: ${{ github.event.inputs.upstream }}
+      #     upstream-branch: ${{ github.event.inputs.upstream-branch }}
+      #     branch: ${{ github.event.inputs.branch }}
+      #     token: ${{ secrets.TOKEN }}
 # name: Pull upstream
 # on:
 #   workflow_dispatch:
