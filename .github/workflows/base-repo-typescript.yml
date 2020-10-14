@@ -28,19 +28,6 @@
 name: Manual Merge Remote Action
 on:
   workflow_dispatch:
-    inputs:
-      upstream:
-        description: 'Upstream repository owner/name. Eg. exions/merge-upstream'
-        required: true
-        default: 'gluecode-it/.typescript-repo' # set the upstream repo
-      upstream-branch:
-        description: 'Upstream branch to merge from. Eg. master'
-        required: true
-        default: 'master' # set the upstream branch to merge from
-      branch:
-        description: 'Branch to merge to'
-        required: true
-        default: 'upstream' # set the branch to merge to
 
 jobs:
   merge-upstream:
@@ -51,8 +38,8 @@ jobs:
         with:
           ref: ${{ github.event.inputs.branch }}
           fetch-depth: 0
-      - name: Fetch all history for all tags and branches
-        run: git fetch --prune --unshallow
+      # - name: Fetch all history for all tags and branches
+      #   run: git fetch --prune --unshallow
       # Pull the detached remote and do the magic
       - name: Pull Detached Remote
         uses: litetex/pull-detached-remote@v0.2.0
