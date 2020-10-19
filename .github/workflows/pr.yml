@@ -15,12 +15,12 @@ jobs:
           node-version: 12
       - name: npmrc
         run: >-
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" >>
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_PAT }}" >>
           .npmrc
       - name: Install dependencies
         run: npm install
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
-          NPM_TOKEN: '${{ secrets.NPM_TOKEN }}'
+          NPM_TOKEN: '${{ secrets.GH_PAT }}'
       - name: Run Jest
         run: npm test
