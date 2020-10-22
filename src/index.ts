@@ -14,22 +14,40 @@ export interface Counts {
 
 export class VoiceChannelObserver {
 	private emitter: EventEmitter;
+	private currentPresentUsers: string[];
 
-	constructor(
-		private client: Client,
-		private channelId: string,
-		private currentPresentUsers: string[] = []
-	) {
+	constructor(private client: Client, private channelId: string) {
 		this.emitter = new EventEmitter();
+		this.currentPresentUsers = [];
+	}
+
+	private addUser(userId: string) {
+		if (!this.currentPresentUsers.includes(userId)) {
+			this.currentPresentUsers.push(userId);
+		}
+	}
+
+	public getCurrentPresentUsersCount(): number {
+		return this.currentPresentUsers.length;
+	}
+
+	async start() {
+		const channel = await this.client.channels.fetch(this.channelId);
+		// @ts-ignore
+		for (const [id] of channel.members) {
+			this.addUser(id);
+		}
+
 		this.client.on(
 			'voiceStateUpdate',
 			(oldMember: VoiceState, newMember: VoiceState) => {
 				if (this.hasUserJoined(oldMember, newMember)) {
 					const countBefore = this.currentPresentUsers.length;
-					this.currentPresentUsers.push(newMember.id);
+					this.addUser(newMember.id);
 					const countAfter = this.currentPresentUsers.length;
-					this.emitIncrease(countBefore, countAfter);
-					return;
+					if (countBefore !== countAfter) {
+						return this.emitIncrease(countBefore, countAfter);
+					}
 				}
 
 				if (this.hasUserLeft(oldMember, newMember)) {
@@ -40,8 +58,9 @@ export class VoiceChannelObserver {
 						}
 					);
 					const countAfter = this.currentPresentUsers.length;
-					this.emitDecrease(countBefore, countAfter);
-					return;
+					if (countBefore !== countAfter) {
+						return this.emitDecrease(countBefore, countAfter);
+					}
 				}
 
 				this.emitNothingChanged(this.currentPresentUsers.length);
@@ -109,8 +128,21 @@ export class VoiceChannelObserver {
 		callback: (channelId: string, counts: Counts) => void
 	) {
 		this.emitter.on(Event.INCREASE, (counts: Counts) => {
-			if (counts.now >= threshold) callback(this.channelId, counts);
+			if (counts.now >= threshold) return callback(this.channelId, counts);
 		});
+	}
+
+	public onceThresholdReached(
+		threshold: number,
+		callback: (channelId: string, counts: Counts) => void
+	) {
+		const handler = (counts: Counts) => {
+			if (counts.now >= threshold) {
+				callback(this.channelId, counts);
+				this.emitter.removeListener(Event.INCREASE, handler);
+			}
+		};
+		this.emitter.on(Event.INCREASE, handler);
 	}
 
 	public onThresholdLeft(
@@ -120,5 +152,18 @@ export class VoiceChannelObserver {
 		this.emitter.on(Event.DECREASE, (counts: Counts) => {
 			if (counts.now < threshold) callback(this.channelId, counts);
 		});
+	}
+
+	public onceThresholdLeft(
+		threshold: number,
+		callback: (channelId: string, counts: Counts) => void
+	) {
+		const handler = (counts: Counts) => {
+			if (counts.now < threshold) {
+				callback(this.channelId, counts);
+				this.emitter.removeListener(Event.DECREASE, handler);
+			}
+		};
+		this.emitter.on(Event.DECREASE, handler);
 	}
 }

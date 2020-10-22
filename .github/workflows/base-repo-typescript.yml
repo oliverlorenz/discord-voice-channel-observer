@@ -1,0 +1,78 @@
+# name: Manual Merge Remote Action
+# on:
+#   workflow_dispatch:
+
+# jobs:
+#   merge-upstream:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v2
+#         with:
+#           ref: ${{ github.event.inputs.branch }}
+#           fetch-depth: 0
+#       - name: Merge Upstream
+#         uses: exions/merge-upstream@v1
+#         with:
+#           upstream: gluecode-it/.typescript-repo
+#           upstream-branch: master
+#           branch: upstream-branch
+#           token: ${{ secrets.GH_PAT }}
+#       - name: Create Sync PR
+#         uses: sudoStatus200/create-sync-pr@0.3.1
+#         with:
+#           GITHUB_TOKEN: ${{secrets.GH_PAT}}
+#           SOURCE_BRANCH: 'upstream-branch'
+#           TARGET_BRANCH: 'master'
+
+name: Manual Merge Remote Action
+on:
+  workflow_dispatch:
+
+jobs:
+  merge-upstream:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.inputs.branch }}
+          fetch-depth: 0
+      # - name: Fetch all history for all tags and branches
+      #   run: git fetch --prune --unshallow
+      # Pull the detached remote and do the magic
+      - name: Pull Detached Remote
+        uses: litetex/pull-detached-remote@v0.2.0
+        with:
+          upstreamrepo: https://github.com/gluecode-it/.typescript-repo
+          upstreambranch: master
+        env:
+          GITHUB_PAT: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Merge Upstream
+      #   uses: gluecode-it/.merge-upstream@master
+      #   with:
+      #     upstream: ${{ github.event.inputs.upstream }}
+      #     upstream-branch: ${{ github.event.inputs.upstream-branch }}
+      #     branch: ${{ github.event.inputs.branch }}
+      #     token: ${{ secrets.TOKEN }}
+# name: Pull upstream
+# on:
+#   workflow_dispatch:
+# jobs:
+#   release_pull_request:
+#     runs-on: ubuntu-latest
+#     name: release_pull_request
+#     steps:
+#       - name: checkout
+#         uses: actions/checkout@v1
+#       - name: Create PR to branch
+#         uses: gorillio/github-action-sync@master
+#         with:
+#           upstream: git@github.com:gluecode-it/.typescript-repo.git
+#           upstream_branch: master
+#           branch: upstream-typescript
+#           pr_labels: upstream
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#           DRY_RUN: false
